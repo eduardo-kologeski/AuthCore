@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>JWT API</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<main class="shell">
+    <section class="panel">
+        <div>
+            <p class="eyebrow">Spring Boot + JWT</p>
+            <h1>Cadastro e login</h1>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="Acesso">
+            <button class="tab active" type="button" data-tab="login">Login</button>
+            <button class="tab" type="button" data-tab="register">Cadastro</button>
+        </div>
+
+        <form id="login-form" class="form">
+            <label>
+                E-mail
+                <input name="email" type="email" autocomplete="email" required>
+            </label>
+            <label>
+                Senha
+                <input name="password" type="password" autocomplete="current-password" required>
+            </label>
+            <button type="submit">Entrar</button>
+        </form>
+
+        <form id="register-form" class="form hidden">
+            <label>
+                Nome
+                <input name="name" type="text" autocomplete="name" required maxlength="120">
+            </label>
+            <label>
+                E-mail
+                <input name="email" type="email" autocomplete="email" required maxlength="180">
+            </label>
+            <label>
+                Senha
+                <input name="password" type="password" autocomplete="new-password" required minlength="6" maxlength="72">
+            </label>
+            <button type="submit">Criar conta</button>
+        </form>
+    </section>
+
+    <section class="panel account">
+        <p class="eyebrow">Sessao atual</p>
+        <pre id="output">Nenhum usuario autenticado.</pre>
+        <div class="actions">
+            <button id="me-button" type="button">Buscar /api/users/me</button>
+            <button id="logout-button" type="button" class="secondary">Sair</button>
+        </div>
+    </section>
+</main>
+<script src="/app.js"></script>
+</body>
+</html>
