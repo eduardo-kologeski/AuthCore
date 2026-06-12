@@ -12,6 +12,6 @@ public class UserController {
     @GetMapping("/me")
     public UserResponse me(@AuthenticationPrincipal UserPrincipal principal) {
         User user = principal.user();
-        return new UserResponse(user.getId(), user.getName(), user.getEmail());
+        return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole());
     }
 }
