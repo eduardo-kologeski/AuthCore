@@ -5,15 +5,22 @@ const tabs = document.querySelectorAll(".tab");
 const meButton = document.querySelector("#me-button");
 const logoutButton = document.querySelector("#logout-button");
 
-let token = localStorage.getItem("jwt-token");
+let accessToken = localStorage.getItem("access-token");
+let refreshToken = localStorage.getItem("refresh-token");
 
 function show(data) {
     output.textContent = typeof data === "string" ? data : JSON.stringify(data, null, 2);
 }
 
 function setSession(data) {
-    token = data.token;
-    localStorage.setItem("jwt-token", token);
+    accessToken = data.accessToken;
+    refreshToken = data.refreshToken || null;
+    localStorage.setItem("access-token", accessToken);
+    if (refreshToken) {
+        localStorage.setItem("refresh-token", refreshToken);
+    } else {
+        localStorage.removeItem("refresh-token");
+    }
     show(data);
 }
 
@@ -23,8 +30,8 @@ async function request(path, options = {}) {
         ...options.headers
     };
 
-    if (token) {
-        headers.Authorization = `Bearer ${token}`;
+    if (accessToken) {
+        headers.Authorization = `Bearer ${accessToken}`;
     }
 
     const response = await fetch(path, { ...options, headers });
@@ -36,7 +43,11 @@ async function request(path, options = {}) {
 }
 
 function formData(form) {
-    return Object.fromEntries(new FormData(form).entries());
+    const data = Object.fromEntries(new FormData(form).entries());
+    if (form.querySelector("[name='rememberMe']")) {
+        data.rememberMe = data.rememberMe === "true";
+    }
+    return data;
 }
 
 tabs.forEach((tab) => {
@@ -80,12 +91,24 @@ meButton.addEventListener("click", async () => {
     }
 });
 
-logoutButton.addEventListener("click", () => {
-    token = null;
-    localStorage.removeItem("jwt-token");
+logoutButton.addEventListener("click", async () => {
+    if (refreshToken) {
+        try {
+            await request("/api/auth/logout", {
+                method: "POST",
+                body: JSON.stringify({ refreshToken })
+            });
+        } catch (error) {
+            show(error.message);
+        }
+    }
+    accessToken = null;
+    refreshToken = null;
+    localStorage.removeItem("access-token");
+    localStorage.removeItem("refresh-token");
     show("Nenhum usuario autenticado.");
 });
 
-if (token) {
+if (accessToken) {
     show("Token encontrado no navegador. Clique em Buscar /api/users/me.");
 }

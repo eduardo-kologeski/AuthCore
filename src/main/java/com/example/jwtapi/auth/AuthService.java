@@ -1,6 +1,7 @@
 package com.example.jwtapi.auth;
 
 import com.example.jwtapi.security.JwtService;
+import com.example.jwtapi.security.RefreshTokenService;
 import com.example.jwtapi.user.User;
 import com.example.jwtapi.user.UserRepository;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -14,11 +15,18 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService,
+            RefreshTokenService refreshTokenService
+    ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @Transactional
@@ -34,9 +42,10 @@ public class AuthService {
                 passwordEncoder.encode(request.password())
         ));
 
-        return toResponse(user);
+        return accessTokenResponse(user);
     }
 
+    @Transactional
     public AuthResponse login(LoginRequest request) {
         String email = request.email().trim().toLowerCase();
         User user = userRepository.findByEmail(email)
@@ -46,15 +55,38 @@ public class AuthService {
             throw new BadCredentialsException("Credenciais invalidas.");
         }
 
-        return toResponse(user);
+        if (!request.rememberMe()) {
+            return accessTokenResponse(user);
+        }
+
+        RefreshTokenService.RefreshTokenResult refreshToken = refreshTokenService.createRefreshToken(user);
+        return refreshTokenResponse(user, refreshToken.token());
     }
 
-    private AuthResponse toResponse(User user) {
+    @Transactional
+    public AuthResponse refresh(RefreshTokenRequest request) {
+        RefreshTokenService.RefreshTokenResult refreshToken = refreshTokenService.rotate(request.refreshToken());
+        return refreshTokenResponse(refreshToken.refreshToken().getUser(), refreshToken.token());
+    }
+
+    @Transactional
+    public void logout(LogoutRequest request) {
+        refreshTokenService.revoke(request.refreshToken());
+    }
+
+    private AuthResponse accessTokenResponse(User user) {
         return new AuthResponse(
                 jwtService.generateToken(user),
-                user.getId(),
-                user.getName(),
-                user.getEmail()
+                null,
+                null
+        );
+    }
+
+    private AuthResponse refreshTokenResponse(User user, String refreshToken) {
+        return new AuthResponse(
+                jwtService.generateToken(user),
+                refreshToken,
+                jwtService.getExpirationSeconds()
         );
     }
 }
