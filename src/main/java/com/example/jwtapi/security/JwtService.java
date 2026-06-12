@@ -49,6 +49,10 @@ public class JwtService {
         return claims.getSubject().equals(email) && claims.getExpiration().after(new Date());
     }
 
+    public long getExpirationSeconds() {
+        return expiration.toSeconds();
+    }
+
     private Claims parseClaims(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
