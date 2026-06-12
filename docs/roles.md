@@ -1,53 +1,21 @@
 # Roles E Permissoes
 
-Este documento descreve o estado atual e a evolucao planejada de roles no AuthCore.
+Este documento descreve o controle de acesso baseado em roles implementado no AuthCore.
 
-## Estado Atual
+## Objetivo
 
-Roles e permissoes ainda nao estao implementados no codigo.
+O RBAC do AuthCore permite diferenciar usuarios comuns e administradores, protegendo endpoints administrativos com Spring Security.
 
-Atualmente:
+## Roles Disponiveis
 
-- A entidade `User` nao possui campo de role.
-- `UserPrincipal#getAuthorities()` retorna uma lista vazia.
-- `SecurityConfig` diferencia apenas rotas publicas e rotas autenticadas.
-- Nao existem endpoints protegidos por permissao especifica.
-
-## Modelo Atual De Autorizacao
-
-O modelo atual e binario:
-
-| Tipo de rota | Regra |
+| Role | Descricao |
 | --- | --- |
-| Publica | Pode ser acessada sem token. |
-| Protegida | Exige access token JWT valido. |
+| `USER` | Usuario comum criado pelo cadastro publico. |
+| `ADMIN` | Usuario administrador com acesso aos endpoints `/api/admin/**`. |
 
-Rotas publicas atuais:
+## Modelo De Dominio
 
-- `/`
-- `/index.html`
-- `/styles.css`
-- `/app.js`
-- `/api/auth/**`
-- `/h2-console/**`
-
-Demais rotas exigem autenticacao.
-
-## Evolucao Planejada
-
-Uma evolucao natural do AuthCore e adicionar roles como:
-
-- `USER`
-- `ADMIN`
-
-Possivel extensao da entidade `User`:
-
-```java
-@Enumerated(EnumType.STRING)
-private Role role;
-```
-
-Possivel enum:
+A role e representada pelo enum:
 
 ```java
 public enum Role {
@@ -56,41 +24,118 @@ public enum Role {
 }
 ```
 
-Possivel ajuste em `UserPrincipal`:
+A entidade `User` possui o campo:
 
 ```java
-return List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+@Enumerated(EnumType.STRING)
+@Column(nullable = false, length = 20)
+private Role role = Role.USER;
 ```
 
-## Autorizacao Por Endpoint
+Todo usuario criado pelo cadastro publico recebe `USER` por padrao.
 
-Com roles implementadas, endpoints poderiam usar regras como:
+## Authorities
+
+`UserPrincipal#getAuthorities()` converte a role persistida para authority do Spring Security:
+
+```java
+ROLE_USER
+ROLE_ADMIN
+```
+
+Isso permite usar regras como:
 
 ```java
 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-.anyRequest().authenticated()
 ```
 
-Ou anotacoes:
+## JWT
 
-```java
-@PreAuthorize("hasRole('ADMIN')")
+O access token JWT inclui a claim:
+
+```json
+{
+  "role": "ADMIN"
+}
 ```
 
-## Cuidados Recomendados
+Mesmo com a role no token, a aplicacao carrega o usuario pelo e-mail do token e monta as authorities a partir do usuario persistido.
 
-- Definir roles no backend, nunca confiar em valor enviado pelo cliente.
-- Persistir roles em banco de dados.
-- Incluir roles no access token apenas se necessario.
-- Validar alteracoes de roles em operacoes administrativas.
-- Considerar escopos/permissoes granulares se a aplicacao crescer.
+## Regras De Acesso
 
-## Status
-
-| Item | Estado |
+| Rota | Regra |
 | --- | --- |
-| Entidade `Role` | Planejado |
-| Campo role em `User` | Planejado |
-| Authorities no `UserPrincipal` | Planejado |
-| Endpoints por perfil | Planejado |
-| Testes de autorizacao | Planejado |
+| `/api/auth/**` | Publica |
+| `/api/admin/bootstrap` | Publica com `bootstrapToken` |
+| `/api/admin/**` | Exige `ADMIN` |
+| Demais rotas | Exigem usuario autenticado |
+
+## Bootstrap Do Primeiro Administrador
+
+Endpoint:
+
+```http
+POST /api/admin/bootstrap
+```
+
+O endpoint cria o primeiro usuario `ADMIN` somente se:
+
+- O `bootstrapToken` enviado for valido.
+- Ainda nao existir nenhum usuario com role `ADMIN`.
+- O e-mail informado ainda nao estiver cadastrado.
+
+Configuracao:
+
+```properties
+app.admin.bootstrap-token=change-me-dev-bootstrap-token
+```
+
+Em producao, esse valor deve ser configurado por variavel de ambiente ou gerenciador de segredos.
+
+## Gestao Administrativa
+
+Endpoints atuais:
+
+```http
+GET /api/admin/users
+PATCH /api/admin/users/{userId}/role
+```
+
+Apenas usuarios com role `ADMIN` podem acessar esses endpoints.
+
+Exemplo de alteracao de role:
+
+```json
+{
+  "role": "ADMIN"
+}
+```
+
+## Comportamento De Erros
+
+| Cenario | Status |
+| --- | --- |
+| Usuario sem token acessa rota protegida | `401` |
+| Usuario `USER` acessa rota administrativa | `403` |
+| Bootstrap token invalido | `401` |
+| Segundo bootstrap de ADMIN | `409` |
+
+## Testes
+
+A suite `RbacIntegrationTests` cobre:
+
+- Usuario publico criado como `USER`.
+- Bootstrap do primeiro `ADMIN`.
+- Rejeicao de bootstrap com token invalido.
+- Bloqueio de segundo bootstrap.
+- `USER` sem acesso a endpoints admin.
+- `ADMIN` listando usuarios.
+- `ADMIN` alterando role de usuario.
+- Login de admin retornando access token valido.
+
+## Melhorias Planejadas
+
+- Permissoes granulares alem de roles.
+- Auditoria de alteracao de role.
+- Protecao para evitar rebaixamento acidental do ultimo administrador.
+- Configuracao de bootstrap token via variavel de ambiente em profiles de producao.

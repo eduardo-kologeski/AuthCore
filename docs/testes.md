@@ -46,6 +46,10 @@ Objetivo:
 | Logout | Verifica revogacao do refresh token. |
 | Rotacao de refresh token | Verifica que o refresh token antigo nao pode ser reutilizado. |
 | Access token valido | Verifica acesso ao endpoint `/api/users/me`. |
+| Usuario publico com role USER | Verifica role padrao no cadastro. |
+| Bootstrap de ADMIN | Verifica criacao segura do primeiro administrador. |
+| ADMIN em endpoints administrativos | Verifica listagem e alteracao de role. |
+| USER bloqueado em endpoints admin | Verifica retorno `403`. |
 
 ## Como Executar
 

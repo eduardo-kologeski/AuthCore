@@ -139,10 +139,10 @@ flowchart TD
 - O refresh token possui service proprio para geracao, hash, validacao, revogacao e rotacao.
 - O refresh token nao e JWT.
 - A autenticacao continua stateless.
+- O controle de acesso administrativo usa roles do Spring Security.
 - O banco atual e H2 em memoria, mantendo compatibilidade com bancos relacionais via JPA.
 
 ## Pontos Em Evolucao
 
-- Roles e permissoes ainda nao estao implementados no codigo.
 - Banco relacional externo, como PostgreSQL, ainda e planejado.
 - Documentacao OpenAPI/Swagger ainda e planejada.

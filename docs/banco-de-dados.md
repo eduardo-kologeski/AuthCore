@@ -41,6 +41,7 @@ Campos:
 | `name` | `String` | Nome do usuario. |
 | `email` | `String` | E-mail unico. |
 | `password` | `String` | Hash BCrypt da senha. |
+| `role` | `Role` | Role do usuario: `USER` ou `ADMIN`. |
 
 Tabela:
 
