@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -86,6 +87,9 @@ class AuthIntegrationTests {
         assertEquals(900, body.get("expiresIn").asLong());
         assertEquals(1, refreshTokenRepository.count());
         assertNotEquals(persistedToken.getTokenHash(), refreshToken);
+        assertEquals("Navegador Teste", persistedToken.getDeviceName());
+        assertEquals("MockMvc", persistedToken.getUserAgent());
+        assertEquals("192.0.2.10", persistedToken.getIpAddress());
     }
 
     @Test
@@ -107,6 +111,12 @@ class AuthIntegrationTests {
         assertNotEquals(firstRefreshToken, secondRefreshToken);
         assertEquals(2, refreshTokenRepository.count());
         assertEquals(1, refreshTokenRepository.findAll().stream().filter(RefreshToken::isRevoked).count());
+        RefreshToken revokedToken = refreshTokenRepository.findAll().stream()
+                .filter(RefreshToken::isRevoked)
+                .findFirst()
+                .orElseThrow();
+        assertNotNull(revokedToken.getLastUsedAt());
+        assertNotNull(revokedToken.getRevokedAt());
     }
 
     @Test
@@ -148,6 +158,7 @@ class AuthIntegrationTests {
                 .andExpect(status().isNoContent());
 
         assertTrue(refreshTokenRepository.findAll().getFirst().isRevoked());
+        assertNotNull(refreshTokenRepository.findAll().getFirst().getRevokedAt());
 
         mockMvc.perform(post("/api/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -206,11 +217,14 @@ class AuthIntegrationTests {
     private MvcResult login(String email, boolean rememberMe) throws Exception {
         return mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .header("User-Agent", "MockMvc")
+                        .header("X-Forwarded-For", "192.0.2.10")
                         .content("""
                                 {
                                   "email": "%s",
                                   "password": "123456",
-                                  "rememberMe": %s
+                                  "rememberMe": %s,
+                                  "deviceName": "Navegador Teste"
                                 }
                                 """.formatted(email, rememberMe)))
                 .andExpect(status().isOk())
