@@ -47,6 +47,10 @@ A camada de seguranca usa Spring Security em modo stateless. O access token JWT 
 - Armazenamento de refresh token apenas como hash
 - Rotacao obrigatoria de refresh token
 - Logout com revogacao de refresh token
+- Roles `USER` e `ADMIN`
+- Protecao de endpoints administrativos por role
+- Bootstrap seguro do primeiro administrador
+- Gestao administrativa de usuarios
 - Endpoint protegido para dados do usuario autenticado
 - Tratamento padronizado de erros
 - Testes de integracao para fluxos de autenticacao
@@ -99,6 +103,9 @@ http://localhost:8080/
 | `POST` | `/api/auth/refresh` | Rotaciona refresh token e emite novo access token | Publico com refresh token |
 | `POST` | `/api/auth/logout` | Revoga refresh token | Publico com refresh token |
 | `GET` | `/api/users/me` | Retorna usuario autenticado | Bearer access token |
+| `POST` | `/api/admin/bootstrap` | Cria o primeiro administrador | Bootstrap token |
+| `GET` | `/api/admin/users` | Lista usuarios | ADMIN |
+| `PATCH` | `/api/admin/users/{userId}/role` | Altera role de usuario | ADMIN |
 
 ## Testes
 
@@ -108,7 +115,7 @@ Execute:
 mvn test
 ```
 
-A suite atual cobre login com e sem `rememberMe`, refresh valido, refresh expirado, refresh revogado, logout, rotacao de refresh token e autenticacao de endpoint protegido com access token.
+A suite atual cobre login com e sem `rememberMe`, refresh valido, refresh expirado, refresh revogado, logout, rotacao de refresh token, autenticacao de endpoint protegido com access token, bootstrap de administrador e autorizacao por roles.
 
 ## Estado Das Funcionalidades
 
@@ -119,7 +126,9 @@ A suite atual cobre login com e sem `rememberMe`, refresh valido, refresh expira
 | Refresh token | Implementado |
 | Rotacao de refresh token | Implementado |
 | Logout com revogacao | Implementado |
-| Roles e permissoes | Planejado / em evolucao |
+| Roles e permissoes | Implementado |
+| Bootstrap de administrador | Implementado |
+| Gestao administrativa de usuarios | Implementado |
 | Banco relacional externo | Planejado / em evolucao |
 | Swagger/OpenAPI | Planejado / em evolucao |
 | Docker | Planejado / em evolucao |
