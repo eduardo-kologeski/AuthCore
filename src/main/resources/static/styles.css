@@ -47,6 +47,12 @@ h1 {
     line-height: 1.1;
 }
 
+h2 {
+    margin: 0 0 16px;
+    font-size: 1.35rem;
+    line-height: 1.2;
+}
+
 .tabs {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -63,6 +69,11 @@ button {
     color: #ffffff;
     font-weight: 700;
     cursor: pointer;
+}
+
+button:disabled {
+    cursor: wait;
+    opacity: 0.7;
 }
 
 .tab {
@@ -146,6 +157,64 @@ pre {
     color: #1d2321;
 }
 
+.admin-panel {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 16px;
+}
+
+.admin-panel.hidden {
+    display: none;
+}
+
+.status {
+    min-height: 22px;
+    color: #52615d;
+    font-size: 0.94rem;
+}
+
+.user-list {
+    display: grid;
+    gap: 10px;
+}
+
+.user-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 14px;
+    border: 1px solid #d9ded6;
+    border-radius: 6px;
+    background: #fbfcfa;
+}
+
+.user-item div {
+    min-width: 0;
+    display: grid;
+    gap: 4px;
+}
+
+.user-item strong,
+.user-item span {
+    overflow-wrap: anywhere;
+}
+
+.user-item span {
+    color: #52615d;
+}
+
+.role-badge {
+    min-width: 74px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: #e7ece7;
+    color: #1d2321;
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
 @media (max-width: 760px) {
     body {
         padding: 18px;
@@ -158,5 +227,13 @@ pre {
 
     .panel {
         padding: 22px;
+    }
+
+    .user-item {
+        grid-template-columns: 1fr;
+    }
+
+    .role-badge {
+        justify-self: start;
     }
 }
