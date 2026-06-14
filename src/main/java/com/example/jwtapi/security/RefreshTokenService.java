@@ -80,6 +80,11 @@ public class RefreshTokenService {
         refreshToken.revoke();
     }
 
+    @Transactional
+    public int deleteExpiredOrRevokedBefore(Instant cutoff) {
+        return refreshTokenRepository.deleteExpiredOrRevokedBefore(cutoff);
+    }
+
     private RefreshToken findValidToken(String rawToken) {
         RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(hash(rawToken))
                 .orElseThrow(() -> new BadCredentialsException("Refresh token invalido."));
