@@ -34,18 +34,44 @@ public class RefreshTokenService {
 
     @Transactional
     public RefreshTokenResult createRefreshToken(User user) {
+        return createRefreshToken(user, new RefreshTokenMetadata(null, null, null));
+    }
+
+    @Transactional
+    public RefreshTokenResult createRefreshToken(User user, RefreshTokenMetadata metadata) {
         String token = generateToken();
         Instant now = Instant.now();
-        RefreshToken refreshToken = new RefreshToken(user, hash(token), now, now.plus(expiration));
+        RefreshToken refreshToken = new RefreshToken(
+                user,
+                hash(token),
+                truncate(metadata.deviceName(), 120),
+                truncate(metadata.userAgent(), 512),
+                truncate(metadata.ipAddress(), 45),
+                now,
+                now.plus(expiration)
+        );
         refreshTokenRepository.save(refreshToken);
         return new RefreshTokenResult(token, refreshToken);
     }
 
     @Transactional
     public RefreshTokenResult rotate(String rawToken) {
+        return rotate(rawToken, new RefreshTokenMetadata(null, null, null));
+    }
+
+    @Transactional
+    public RefreshTokenResult rotate(String rawToken, RefreshTokenMetadata metadata) {
         RefreshToken currentToken = findValidToken(rawToken);
-        currentToken.revoke();
-        return createRefreshToken(currentToken.getUser());
+        Instant now = Instant.now();
+        currentToken.markUsed(now);
+        currentToken.revoke(now);
+
+        RefreshTokenMetadata nextMetadata = new RefreshTokenMetadata(
+                firstNonBlank(metadata.deviceName(), currentToken.getDeviceName()),
+                firstNonBlank(metadata.userAgent(), currentToken.getUserAgent()),
+                firstNonBlank(metadata.ipAddress(), currentToken.getIpAddress())
+        );
+        return createRefreshToken(currentToken.getUser(), nextMetadata);
     }
 
     @Transactional
@@ -69,6 +95,18 @@ public class RefreshTokenService {
         byte[] bytes = new byte[TOKEN_BYTES];
         secureRandom.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    private String firstNonBlank(String first, String fallback) {
+        return first == null || first.isBlank() ? fallback : first;
+    }
+
+    private String truncate(String value, int maxLength) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.length() <= maxLength ? trimmed : trimmed.substring(0, maxLength);
     }
 
     private String hash(String token) {

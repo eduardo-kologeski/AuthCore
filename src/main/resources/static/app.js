@@ -52,6 +52,7 @@ function formData(form) {
     const data = Object.fromEntries(new FormData(form).entries());
     if (form.querySelector("[name='rememberMe']")) {
         data.rememberMe = data.rememberMe === "true";
+        data.deviceName = data.deviceName || "Navegador web";
     }
     return data;
 }

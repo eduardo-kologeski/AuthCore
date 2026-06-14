@@ -1,6 +1,7 @@
 package com.example.jwtapi.auth;
 
 import com.example.jwtapi.security.JwtService;
+import com.example.jwtapi.security.RefreshTokenMetadata;
 import com.example.jwtapi.security.RefreshTokenService;
 import com.example.jwtapi.user.User;
 import com.example.jwtapi.user.UserRepository;
@@ -46,7 +47,7 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse login(LoginRequest request) {
+    public AuthResponse login(LoginRequest request, RefreshTokenMetadata metadata) {
         String email = request.email().trim().toLowerCase();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BadCredentialsException("Credenciais invalidas."));
@@ -59,13 +60,16 @@ public class AuthService {
             return accessTokenResponse(user);
         }
 
-        RefreshTokenService.RefreshTokenResult refreshToken = refreshTokenService.createRefreshToken(user);
+        RefreshTokenService.RefreshTokenResult refreshToken = refreshTokenService.createRefreshToken(
+                user,
+                new RefreshTokenMetadata(request.deviceName(), metadata.userAgent(), metadata.ipAddress())
+        );
         return refreshTokenResponse(user, refreshToken.token());
     }
 
     @Transactional
-    public AuthResponse refresh(RefreshTokenRequest request) {
-        RefreshTokenService.RefreshTokenResult refreshToken = refreshTokenService.rotate(request.refreshToken());
+    public AuthResponse refresh(RefreshTokenRequest request, RefreshTokenMetadata metadata) {
+        RefreshTokenService.RefreshTokenResult refreshToken = refreshTokenService.rotate(request.refreshToken(), metadata);
         return refreshTokenResponse(refreshToken.refreshToken().getUser(), refreshToken.token());
     }
 
