@@ -28,11 +28,24 @@ public class RefreshToken {
     @Column(nullable = false, unique = true, length = 64)
     private String tokenHash;
 
+    @Column(length = 120)
+    private String deviceName;
+
+    @Column(length = 512)
+    private String userAgent;
+
+    @Column(length = 45)
+    private String ipAddress;
+
     @Column(nullable = false)
     private Instant createdAt;
 
     @Column(nullable = false)
     private Instant expiresAt;
+
+    private Instant lastUsedAt;
+
+    private Instant revokedAt;
 
     @Column(nullable = false)
     private boolean revoked;
@@ -40,9 +53,20 @@ public class RefreshToken {
     protected RefreshToken() {
     }
 
-    public RefreshToken(User user, String tokenHash, Instant createdAt, Instant expiresAt) {
+    public RefreshToken(
+            User user,
+            String tokenHash,
+            String deviceName,
+            String userAgent,
+            String ipAddress,
+            Instant createdAt,
+            Instant expiresAt
+    ) {
         this.user = user;
         this.tokenHash = tokenHash;
+        this.deviceName = deviceName;
+        this.userAgent = userAgent;
+        this.ipAddress = ipAddress;
         this.createdAt = createdAt;
         this.expiresAt = expiresAt;
     }
@@ -59,6 +83,18 @@ public class RefreshToken {
         return tokenHash;
     }
 
+    public String getDeviceName() {
+        return deviceName;
+    }
+
+    public String getUserAgent() {
+        return userAgent;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
@@ -67,12 +103,29 @@ public class RefreshToken {
         return expiresAt;
     }
 
+    public Instant getLastUsedAt() {
+        return lastUsedAt;
+    }
+
+    public Instant getRevokedAt() {
+        return revokedAt;
+    }
+
     public boolean isRevoked() {
         return revoked;
     }
 
     public void revoke() {
+        revoke(Instant.now());
+    }
+
+    public void revoke(Instant revokedAt) {
         this.revoked = true;
+        this.revokedAt = revokedAt;
+    }
+
+    public void markUsed(Instant lastUsedAt) {
+        this.lastUsedAt = lastUsedAt;
     }
 
     public void setExpiresAt(Instant expiresAt) {

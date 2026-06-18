@@ -34,6 +34,8 @@ A camada de seguranca usa Spring Security em modo stateless. O access token JWT 
 - Spring Data JPA
 - Hibernate
 - H2 Database
+- PostgreSQL
+- Flyway
 - JJWT 0.13.0
 - Maven
 - JUnit e MockMvc
@@ -51,6 +53,10 @@ A camada de seguranca usa Spring Security em modo stateless. O access token JWT 
 - Protecao de endpoints administrativos por role
 - Bootstrap seguro do primeiro administrador
 - Gestao administrativa de usuarios
+- Profile PostgreSQL com credenciais por variaveis de ambiente
+- Migrations versionadas com Flyway
+- Metadados de refresh token por dispositivo/sessao
+- Limpeza agendada de refresh tokens expirados ou revogados antigos
 - Endpoint protegido para dados do usuario autenticado
 - Tratamento padronizado de erros
 - Testes de integracao para fluxos de autenticacao
@@ -67,7 +73,7 @@ A camada de seguranca usa Spring Security em modo stateless. O access token JWT 
   - [Arquitetura em camadas](docs/diagramas/arquitetura.png)
   - [Fluxo de login](docs/diagramas/fluxo-login.png)
 
-## Como Executar
+## Como Executar Com H2
 
 Clone o repositorio:
 
@@ -94,6 +100,32 @@ A pagina web local fica em:
 http://localhost:8080/
 ```
 
+O profile padrao usa H2 em memoria, indicado para desenvolvimento local e testes rapidos.
+
+## Como Executar Com PostgreSQL
+
+Crie um banco PostgreSQL para o projeto e informe as credenciais por variaveis de ambiente.
+
+PowerShell:
+
+```powershell
+$env:POSTGRES_URL="jdbc:postgresql://localhost:5432/authcore"
+$env:POSTGRES_USER="authcore"
+$env:POSTGRES_PASSWORD="authcore"
+mvn spring-boot:run -Dspring-boot.run.profiles=postgres
+```
+
+Bash:
+
+```bash
+POSTGRES_URL=jdbc:postgresql://localhost:5432/authcore \
+POSTGRES_USER=authcore \
+POSTGRES_PASSWORD=authcore \
+mvn spring-boot:run -Dspring-boot.run.profiles=postgres
+```
+
+No profile `postgres`, o Hibernate valida o schema e o Flyway cria/atualiza as tabelas por migrations versionadas em `src/main/resources/db/migration`.
+
 ## Endpoints Principais
 
 | Metodo | Endpoint | Descricao | Autenticacao |
@@ -115,7 +147,7 @@ Execute:
 mvn test
 ```
 
-A suite atual cobre login com e sem `rememberMe`, refresh valido, refresh expirado, refresh revogado, logout, rotacao de refresh token, autenticacao de endpoint protegido com access token, bootstrap de administrador e autorizacao por roles.
+A suite atual cobre login com e sem `rememberMe`, refresh valido, refresh expirado, refresh revogado, logout, rotacao de refresh token, persistencia segura do hash, metadados de sessao, limpeza de tokens antigos, autenticacao de endpoint protegido com access token, bootstrap de administrador e autorizacao por roles.
 
 ## Estado Das Funcionalidades
 
@@ -129,7 +161,9 @@ A suite atual cobre login com e sem `rememberMe`, refresh valido, refresh expira
 | Roles e permissoes | Implementado |
 | Bootstrap de administrador | Implementado |
 | Gestao administrativa de usuarios | Implementado |
-| Banco relacional externo | Planejado / em evolucao |
+| Banco relacional externo PostgreSQL | Implementado |
+| Migrations Flyway | Implementado |
+| Limpeza agendada de refresh tokens | Implementado |
 | Swagger/OpenAPI | Planejado / em evolucao |
 | Docker | Planejado / em evolucao |
 
